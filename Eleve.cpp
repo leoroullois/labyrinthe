@@ -14,6 +14,7 @@ using namespace std;
 #define INIT_PARTIE 2
 #define ECRAN_JEU 3
 #define ECRAN_GAME_OVER 4
+#define ECRAN_WIN 5
 
 struct Rectangle {
   int xMin, xMax, yMin, yMax;
@@ -128,6 +129,7 @@ struct _Chest {
   int IdTex;
   V2 Pos = V2(405, 50);
 
+  bool isOpened = false;
   Rectangle getRect() {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
   }
@@ -161,9 +163,12 @@ struct GameData {
   _Chest Chest;
   int difficulty = 0;
   int ecran = 0;
-  _Momie momiesFacile[3] =  {_Momie(250, 260), _Momie(130, 420), _Momie(370, 470)};
-  _Momie momiesMoyen[3] =  {_Momie(250, 260), _Momie(130, 420), _Momie(370, 470)};
-  _Momie momiesDifficile[3] =  {_Momie(250, 260), _Momie(130, 420), _Momie(370, 470)};
+  _Momie momiesFacile[3] = {_Momie(250, 260), _Momie(130, 420),
+                            _Momie(370, 470)};
+  _Momie momiesMoyen[3] = {_Momie(250, 260), _Momie(130, 420),
+                           _Momie(370, 470)};
+  _Momie momiesDifficile[3] = {_Momie(250, 260), _Momie(130, 420),
+                               _Momie(370, 470)};
 
   _Momie momies[3] = {_Momie(250, 260), _Momie(130, 420), _Momie(370, 470)};
 
@@ -238,6 +243,12 @@ void affichage_ecran_game_over() {
                           "Appuyez sur ENTER pour faire une autre partie.", 16,
                           3, Color::Green);
 }
+void affichage_ecran_win() {
+  G2D::DrawStringFontMono(V2(70, 500), "You WIN !!!!", 80, 10, Color::Green);
+  G2D::DrawStringFontMono(V2(50, 300),
+                          "Appuyez sur ENTER pour faire une autre partie.", 16,
+                          3, Color::White);
+}
 void render() {
   G2D::ClearScreen(Color::Black);
   if (G.ecran == ECRAN_ACCUEIL) {
@@ -254,6 +265,9 @@ void render() {
   }
   if (G.ecran == ECRAN_GAME_OVER) {
     affichage_ecran_game_over();
+  }
+  if (G.ecran == ECRAN_WIN) {
+    affichage_ecran_win();
   }
   G2D::Show();
 }
@@ -285,6 +299,7 @@ void collision(_Heros &heros) {
   if (collisionChest) {
     if (G.Heros.hasKey) {
       cout << "You win !" << endl;
+      G.Chest.isOpened = true;
     }
   }
 
@@ -340,19 +355,31 @@ int gestion_ecran_accueil() {
 int gestion_ecran_options() {
   // * facile
   if (G2D::IsKeyPressed(Key::A)) {
+    G.difficulty = 0;
     return 2;
   }
   // * moyen
   if (G2D::IsKeyPressed(Key::B)) {
+    G.difficulty = 1;
     return 2;
   }
   // * difficile
   if (G2D::IsKeyPressed(Key::C)) {
+    G.difficulty = 2;
     return 2;
   }
   return 1;
 }
 int InitPartie() {
+  G.Heros.hasKey = false;
+  G.Heros.nbVies = 3;
+  G.Heros.hasPistolet = false;
+  G.Heros.nbBalles = 0;
+  G.Heros.Pos = V2(45, 45);
+
+  G.Key.Pos = V2(440, 450);
+  G.Chest.isOpened = false;
+
   if (G2D::IsKeyPressed(Key::ENTER)) {
     return 3;
   }
@@ -374,6 +401,10 @@ int gestion_ecran_jeu() {
   for (int i = 0; i < 3; i++) {
     collision(G.momies[i]);
   }
+
+  if (G.Chest.isOpened) {
+    return 5;
+  }
   if (G.Heros.nbVies == 0) {
     return 4;
   }
@@ -385,7 +416,12 @@ int gestion_ecran_game_over() {
   }
   return 4;
 }
-
+int gestion_ecran_win() {
+  if (G2D::IsKeyPressed(Key::ENTER)) {
+    return 1;
+  }
+  return 5;
+}
 void Logic() {
   if (G.ecran == ECRAN_ACCUEIL) {
     G.ecran = gestion_ecran_accueil();
@@ -403,6 +439,9 @@ void Logic() {
 
   if (G.ecran == ECRAN_GAME_OVER) {
     G.ecran = gestion_ecran_game_over();
+  }
+  if (G.ecran == ECRAN_WIN) {
+    G.ecran = gestion_ecran_win();
   }
 }
 
