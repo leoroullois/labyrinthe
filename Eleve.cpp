@@ -52,6 +52,21 @@ struct _Heros {
                    "[C C  ]"
                    "[C C  ]";
 
+  string texture2 = "[RRR  ]"
+                    "[RRWR ]"
+                    "[RRR  ]"
+                    "[YY   ]"
+                    "[YYY  ]"
+                    "[YY YG]"
+                    "[GG   ]"
+                    "[CC   ]"
+                    "[CCCC ]"
+                    "[C   C]"
+                    "[C    ]";
+
+  bool typeTexture = false;
+  int numTexture = 10;
+
   // ? true si le héros possède une clé
   bool hasKey = false;
   bool hasPistolet = false;
@@ -63,8 +78,25 @@ struct _Heros {
 
   V2 Size;
   int IdTex;
-  int IdTex2;
   V2 Pos = V2(45, 45);
+
+  void changeTexture() {
+    if (numTexture > 0) {
+      numTexture = numTexture - 1;
+    } else if (typeTexture) {
+
+      numTexture = 10;
+      typeTexture = !typeTexture;
+      IdTex = G2D::InitTextureFromString(Size, texture);
+      Size = Size * 2; // on peut zoomer la taille du sprite
+
+    } else {
+      numTexture = 10;
+      typeTexture = !typeTexture;
+      IdTex = G2D::InitTextureFromString(Size, texture2);
+      Size = Size * 2; // on peut zoomer la taille du sprite
+    }
+  }
 
   Rectangle getRect() {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
@@ -163,12 +195,6 @@ struct GameData {
   _Chest Chest;
   int difficulty = 0;
   int ecran = 0;
-  _Momie momiesFacile[3] = {_Momie(250, 260), _Momie(130, 420),
-                            _Momie(370, 470)};
-  _Momie momiesMoyen[3] = {_Momie(250, 260), _Momie(130, 420),
-                           _Momie(370, 470)};
-  _Momie momiesDifficile[3] = {_Momie(250, 260), _Momie(130, 420),
-                               _Momie(370, 470)};
 
   _Momie momies[3] = {_Momie(250, 260), _Momie(130, 420), _Momie(370, 470)};
 
@@ -387,14 +413,23 @@ int InitPartie() {
 }
 int gestion_ecran_jeu() {
   // ? Déplacement héros
-  if (G2D::IsKeyPressed(Key::LEFT))
+  if (G2D::IsKeyPressed(Key::LEFT)) {
     G.Heros.Pos.x--;
-  if (G2D::IsKeyPressed(Key::RIGHT))
+    G.Heros.changeTexture();
+  }
+
+  if (G2D::IsKeyPressed(Key::RIGHT)) {
     G.Heros.Pos.x++;
-  if (G2D::IsKeyPressed(Key::UP))
+    G.Heros.changeTexture();
+  }
+  if (G2D::IsKeyPressed(Key::UP)) {
     G.Heros.Pos.y++;
-  if (G2D::IsKeyPressed(Key::DOWN))
+    G.Heros.changeTexture();
+  }
+  if (G2D::IsKeyPressed(Key::DOWN)) {
     G.Heros.Pos.y--;
+    G.Heros.changeTexture();
+  }
 
   // ? Collisions
   collision(G.Heros);
