@@ -196,7 +196,7 @@ struct GameData {
   int difficulty = 0;
   int ecran = 0;
 
-  _Momie momies[3] = {_Momie(250, 260), _Momie(130, 420), _Momie(370, 470)};
+  vector<_Momie> momies = {};
 
   GameData() {}
 };
@@ -253,9 +253,8 @@ void affichage_ecran_jeu() {
   G2D::DrawRectWithTexture(G.Chest.IdTex, G.Chest.Pos, G.Chest.Size);
 
   // affichage d'une Momie
-  for (int i = 0; i < 3; i++) {
-    G2D::DrawRectWithTexture(G.momies[i].IdTex, G.momies[i].Pos,
-                             G.momies[i].Size);
+  for (_Momie &momie : G.momies) {
+    G2D::DrawRectWithTexture(momie.IdTex, momie.Pos, momie.Size);
   }
   G2D::DrawStringFontMono(V2(100, 580), "Partie en cours", 20, 3, Color::Green);
 
@@ -330,8 +329,8 @@ void collision(_Heros &heros) {
   }
 
   // ? héros/momie
-  for (int i = 0; i < 3; i++) {
-    bool collisionMomie = InterRectRect(rectHero, G.momies[i].getRect());
+  for (_Momie &momie : G.momies) {
+    bool collisionMomie = InterRectRect(rectHero, momie.getRect());
     if (collisionMomie) {
       cout << "You lose !" << endl;
       G.Heros.nbVies--;
@@ -406,7 +405,29 @@ int InitPartie() {
   G.Key.Pos = V2(440, 450);
   G.Chest.isOpened = false;
 
+  // G.momies.clear();
   if (G2D::IsKeyPressed(Key::ENTER)) {
+    G.momies.clear();
+    if (G.difficulty >= 2) {
+      // ? difficile
+      G.momies.push_back(_Momie(529, 380));
+      G.momies.push_back(_Momie(485, 205));
+    }
+    if (G.difficulty >= 1) {
+      // ? moyen
+      G.momies.push_back(_Momie(43, 525));
+      G.momies.push_back(_Momie(316, 45));
+    }
+    if (G.difficulty >= 0) {
+      // ? facile
+      G.momies.push_back(_Momie(250, 250));
+      G.momies.push_back(_Momie(130, 420));
+      G.momies.push_back(_Momie(370, 470));
+    }
+    for (_Momie &momie : G.momies) {
+      momie.IdTex = G2D::InitTextureFromString(momie.Size, momie.texture);
+      momie.Size = momie.Size * 2; // on peut zoomer la taille du sprite
+    }
     return 3;
   }
   return 2;
@@ -433,8 +454,8 @@ int gestion_ecran_jeu() {
 
   // ? Collisions
   collision(G.Heros);
-  for (int i = 0; i < 3; i++) {
-    collision(G.momies[i]);
+  for (_Momie &momie : G.momies) {
+    collision(momie);
   }
 
   if (G.Chest.isOpened) {
@@ -490,20 +511,9 @@ void AssetsInit() {
 
   G.Chest.IdTex = G2D::InitTextureFromString(G.Chest.Size, G.Chest.texture);
   G.Chest.Size = G.Chest.Size * 2.5; // on peut zoomer la taille du sprite
-
-  for (int i = 0; i < 3; i++) {
-    G.momies[i].IdTex =
-        G2D::InitTextureFromString(G.momies[i].Size, G.momies[i].texture);
-    G.momies[i].Size =
-        G.momies[i].Size * 2; // on peut zoomer la taille du sprite
-  }
 }
 
 int main(int argc, char *argv[]) {
-  Rectangle vRect1 = Rectangle(1, 5, 8, 10);
-  Rectangle vRect2 = Rectangle(2, 6, 7, 9);
-  Rectangle vRect3 = Rectangle(11, 50, 80, 100);
-
   G2D::InitWindow(argc, argv, V2(G.Lpix * 15, G.Lpix * 15), V2(200, 200),
                   string("Labyrinthe"));
 
