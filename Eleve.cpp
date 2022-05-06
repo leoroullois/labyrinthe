@@ -21,6 +21,9 @@ struct Rectangle {
   Rectangle(int _xMin, int _yMin, int _xMax, int _yMax) {
     xMin = _xMin, xMax = _xMax, yMin = _yMin, yMax = _yMax;
   }
+
+  V2 getCoordonneeMin() { return V2(xMin, yMin); }
+  V2 getCoordonneeMax() { return V2(xMax, yMax); }
 };
 
 bool InterRectRect(Rectangle R1, Rectangle R2) {
@@ -69,9 +72,8 @@ struct _Heros {
 
   // ? true si le héros possède une clé
   bool hasKey = false;
-  bool hasPistolet = false;
+  bool hasGun = false;
   int nbBalles = 0;
-
   bool getHasKey() { return hasKey; }
   void setHasKey(bool pKey) { hasKey = pKey; }
   int nbVies = 3;
@@ -126,7 +128,13 @@ struct _Momie {
   int IdTex;
   V2 Pos;
   V2 Dir = V2(1, 0);
+
+  int changeCompteur = 50;
+
   _Momie(int x, int y) { Pos = V2(x, y); }
+
+  bool isMomie(_Momie m) { return (m.Pos.x == Pos.x && m.Pos.y == Pos.y); }
+  bool getTapeMomie(_Momie m) { return InterRectRect(m.getRect(), getRect()); }
 
   Rectangle getRect() {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
@@ -167,6 +175,33 @@ struct _Chest {
   }
 };
 
+struct _Gun {
+  string texture = "[   O                        ]"
+                   "[  OGO                    OGO]"
+                   "[  OGGOOOOOOOOOOOOOOOOOOOOGGO]"
+                   "[   OGGMMGGGGGGMMMMMMMMMMMGO ]"
+                   "[    OMMSSGGGGSSGGGGGGGGGGGOO]"
+                   "[    OMSSSSSSSSOWWOWWOWWOGGOO]"
+                   "[    OMSSSSSSSOWWOWWOWWOWWGOO]"
+                   "[  OOMMSSWWSOOOOOOMMMMMMMMMO ]"
+                   "[ OMMMSSWWWOO   O OMOMOMOMO  ]"
+                   "[OMSSSSWWWWO O  O  O O O O   ]"
+                   "[OMOOOSWWWWO    O            ]"
+                   "[OO  OWWWWWOOOOO             ]"
+                   "[    OWWWWWO                 ]"
+                   "[    OWWWWWO                 ]"
+                   "[    OWWWWWO                 ]"
+                   "[    OWWYWWO                 ]"
+                   "[    OWWWWWO                 ]"
+                   "[     OOOOO                  ]";
+
+  V2 Size;
+  int IdTex;
+  V2 Pos = V2(325, 200);
+  Rectangle getRect() {
+    return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
+  }
+};
 struct GameData {
 
   string Map = "MMMMMMMMMMMMMMM"
@@ -193,6 +228,7 @@ struct GameData {
   _Heros Heros; // data du h�ros
   _Key Key;
   _Chest Chest;
+  _Gun Gun;
   int difficulty = 0;
   int ecran = 0;
 
@@ -248,7 +284,10 @@ void affichage_ecran_jeu() {
   if (!G.Heros.getHasKey()) {
     G2D::DrawRectWithTexture(G.Key.IdTex, G.Key.Pos, G.Key.Size);
   }
-
+  // affichage gun
+  if (!G.Heros.hasGun) {
+    G2D::DrawRectWithTexture(G.Gun.IdTex, G.Gun.Pos, G.Gun.Size);
+  }
   // affichage du Chest
   G2D::DrawRectWithTexture(G.Chest.IdTex, G.Chest.Pos, G.Chest.Size);
 
@@ -303,6 +342,7 @@ bool getTapeUnMur(V2 newPos, V2 Size) {
          (G.Mur((newPos.x) / 40, (newPos.y + Size.y) / 40)) ||
          (G.Mur((newPos.x + Size.x) / 40, (newPos.y) / 40));
 }
+
 /**
  * Collision héros/autre
  */
@@ -311,6 +351,14 @@ void collision(_Heros &heros) {
   Rectangle rectChest = G.Chest.getRect();
   Rectangle rectKey = G.Key.getRect();
 
+  bool collisionGun = InterRectRect(G.Heros.getRect(), G.Gun.getRect());
+  if (collisionGun) {
+    if (!heros.hasGun) {
+      cout << "You got the gun" << endl;
+      G.Heros.hasGun = true;
+      G.Gun.Pos = V2(-100, -100);
+    }
+  }
   // ? héros/clé
   bool collisionKey = InterRectRect(rectHero, rectKey);
   if (collisionKey) {
@@ -354,20 +402,49 @@ void collision(_Heros &heros) {
 /**
  * Collision momie/autre
  */
-bool positionValide(_Momie momie, V2 newPos) {
-  return !getTapeUnMur(newPos, momie.Size);
+bool InterMomieMur(_Momie momie, V2 newPos) {
+  return getTapeUnMur(newPos, momie.Size);
+}
+bool InterMomieMomie(_Momie &momie) {
+  bool conditionMomie = false;
+  for (_Momie m : G.momies) {
+    if (!momie.isMomie(m)) {
+      if (momie.getTapeMomie(m)) {
+        conditionMomie = true;
+      }
+    }
+  }
+  return conditionMomie;
 }
 void collision(_Momie &momie) {
+  V2 Dir[4] = {V2(0, 1), V2(1, 0), V2(0, -1), V2(-1, 0)};
   V2 newPos = momie.Pos + momie.Dir;
-  if (positionValide(momie, newPos)) {
 
+  if (InterMomieMomie(momie)) {
+    std::cout << "collision momie" << std::endl;
+    momie.Dir = -momie.Dir;
+    momie.Pos = momie.Pos + momie.Dir;
+    momie.changeCompteur = 50;
+  } else if (!InterMomieMur(momie, newPos)) {
+    // pour avoir un meilleur déplacement des momies, on change leur direction
+    // dès que leur compteur atteint 0
+    if (momie.changeCompteur == 0) {
+      int rd = rand() % 4;
+      while (-Dir[rd] == momie.Dir) {
+        rd = rand() % 4;
+      }
+      momie.Dir = Dir[rd];
+      momie.changeCompteur = 50;
+    }
+    momie.changeCompteur--;
     momie.Pos = newPos;
   } else {
     int rd = rand() % 4;
-
-    V2 Dir[4] = {V2(0, 1), V2(1, 0), V2(0, -1), V2(-1, 0)};
-
+    while (-Dir[rd] == momie.Dir) {
+      rd = rand() % 4;
+    }
     momie.Dir = Dir[rd];
+    momie.changeCompteur = 50;
   }
 }
 
@@ -397,9 +474,10 @@ int gestion_ecran_options() {
 }
 int InitPartie() {
   G.Heros.hasKey = false;
-  G.Heros.nbVies = 3;
-  G.Heros.hasPistolet = false;
+  G.Heros.hasGun = false;
+  G.Heros.hasGun = false;
   G.Heros.nbBalles = 0;
+  G.Heros.nbVies = 3;
   G.Heros.Pos = V2(45, 45);
 
   G.Key.Pos = V2(440, 450);
@@ -502,7 +580,7 @@ void Logic() {
 }
 
 void AssetsInit() {
-  // Size pass� en ref et texture en param
+  // Size passé en ref et texture en param
   G.Heros.IdTex = G2D::InitTextureFromString(G.Heros.Size, G.Heros.texture);
   G.Heros.Size = G.Heros.Size * 2; // on peut zoomer la taille du sprite
 
@@ -511,6 +589,9 @@ void AssetsInit() {
 
   G.Chest.IdTex = G2D::InitTextureFromString(G.Chest.Size, G.Chest.texture);
   G.Chest.Size = G.Chest.Size * 2.5; // on peut zoomer la taille du sprite
+
+  G.Gun.IdTex = G2D::InitTextureFromString(G.Gun.Size, G.Gun.texture);
+  G.Gun.Size = G.Gun.Size * 0.8; // on peut zoomer la taille du sprite
 }
 
 int main(int argc, char *argv[]) {
