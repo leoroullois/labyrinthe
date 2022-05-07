@@ -1,4 +1,3 @@
-
 #pragma warning(disable : 4996)
 
 #include "G2D.h"
@@ -77,7 +76,7 @@ struct _Heros {
   bool hasGun = false;
 
   int score = 0;
-  int nbBalles = 10;
+  int nbBullets = 10;
 
   int LastDirection = 0;
   int getLastDirection() { return LastDirection; }
@@ -108,11 +107,12 @@ struct _Heros {
       Size = Size * 2; // on peut zoomer la taille du sprite
     }
   }
+  void takeDiamond() { score = score + SCORE_DIAMOND; }
+
   void reset() {
     hasKey = false;
     hasGun = false;
-    hasGun = false;
-    nbBalles = 10;
+    nbBullets = 10;
     score = 0;
     nbVies = 3;
     Pos = V2(45, 45);
@@ -191,7 +191,26 @@ struct _Chest {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
   }
 };
+struct _Diamond {
+  string texture = "[   BBBBBBBBBBBBBB   ]"
+                   "[ BBBBBBBBBBBBBBBBBB ]"
+                   "[BBBBBBBBBBBBBBBBBBBB]"
+                   "[BBBBBBBBBBBBBBBBBBBB]"
+                   "[ BBBBBBBBBBBBBBBBBB ]"
+                   "[  BBBBBBBBBBBBBBBB  ]"
+                   "[   BBBBBBBBBBBBBB   ]"
+                   "[         B          ]";
 
+  V2 Size;
+  int IdTex;
+  V2 Pos;
+
+  bool exist = true;
+  _Diamond(V2 _Pos) { Pos = _Pos; }
+  Rectangle getRect() {
+    return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
+  }
+};
 struct _Gun {
   string texture = "[   O                        ]"
                    "[  OGO                    OGO]"
@@ -340,35 +359,35 @@ struct GameData {
   int ecran = 0;
 
   vector<_Momie> momies = {};
-
+  _Diamond diamonds[3] = {_Diamond(V2(270, 250)), _Diamond(V2(180, 420)),
+                          _Diamond(V2(460, 470))};
+  void setMomies() {
+    momies.clear();
+    if (difficulty >= 2) {
+      // ? difficile
+      momies.push_back(_Momie(529, 380));
+      momies.push_back(_Momie(485, 205));
+    }
+    if (difficulty >= 1) {
+      // ? moyen
+      momies.push_back(_Momie(43, 525));
+      momies.push_back(_Momie(316, 45));
+    }
+    if (difficulty >= 0) {
+      // ? facile
+      momies.push_back(_Momie(250, 250));
+      momies.push_back(_Momie(130, 420));
+      momies.push_back(_Momie(370, 470));
+    }
+    for (_Momie &momie : momies) {
+      momie.IdTex = G2D::InitTextureFromString(momie.Size, momie.texture);
+      momie.Size = momie.Size * 2; // on peut zoomer la taille du sprite
+    }
+  }
   GameData() {}
 };
 
 GameData G;
-
-void setMomies() {
-  G.momies.clear();
-  if (G.difficulty >= 2) {
-    // ? difficile
-    G.momies.push_back(_Momie(529, 380));
-    G.momies.push_back(_Momie(485, 205));
-  }
-  if (G.difficulty >= 1) {
-    // ? moyen
-    G.momies.push_back(_Momie(43, 525));
-    G.momies.push_back(_Momie(316, 45));
-  }
-  if (G.difficulty >= 0) {
-    // ? facile
-    G.momies.push_back(_Momie(250, 250));
-    G.momies.push_back(_Momie(130, 420));
-    G.momies.push_back(_Momie(370, 470));
-  }
-  for (_Momie &momie : G.momies) {
-    momie.IdTex = G2D::InitTextureFromString(momie.Size, momie.texture);
-    momie.Size = momie.Size * 2; // on peut zoomer la taille du sprite
-  }
-}
 
 void affichage_ecran_accueil() {
   G2D::DrawStringFontMono(V2(50, 400), "Bienvenue dans le jeu du labyrinthe !",
@@ -400,6 +419,12 @@ void affichage_init_partie() {
 }
 
 void affichage_ecran_jeu() {
+  // affichage des diamants
+  for (int i = 0; i < 3; i++) {
+    G2D::DrawRectWithTexture(G.diamonds[i].IdTex, G.diamonds[i].Pos,
+                             G.diamonds[i].Size);
+  }
+
   for (int x = 0; x < 15; x++)
     for (int y = 0; y < 15; y++) {
       int xx = x * G.Lpix;
@@ -431,6 +456,11 @@ void affichage_ecran_jeu() {
     G2D::DrawRectWithTexture(G.Bullet.IdTex, G.Bullet.Pos, G.Bullet.Size);
   }
 
+  for (_Diamond &diamond : G.diamonds) {
+    if (diamond.exist) {
+      G2D::DrawRectWithTexture(diamond.IdTex, diamond.Pos, diamond.Size);
+    }
+  }
   G2D::DrawStringFontMono(V2(30, 580), "Partie en cours", 20, 3, Color::Green);
 
   string vies = "Nombre de vies : " + std::to_string(G.Heros.nbVies);
@@ -439,7 +469,7 @@ void affichage_ecran_jeu() {
   string score = "Score actuel : " + std::to_string(G.Heros.score);
   G2D::DrawStringFontMono(V2(300, 580), score, 20, 3, Color::Yellow);
 
-  string balles = "Nombre de balles : " + std::to_string(G.Heros.nbBalles);
+  string balles = "Nombre de balles : " + std::to_string(G.Heros.nbBullets);
   G2D::DrawStringFontMono(V2(300, 20), balles, 20, 3, Color::Cyan);
 }
 
@@ -542,18 +572,29 @@ void collision(_Heros &heros) {
     }
   }
 
+  // ? héros/diamond
+  for (int i = 0; i < 3; i++) {
+    _Diamond &diamond = G.diamonds[i];
+    bool collisionDiamond = InterRectRect(rectHero, diamond.getRect());
+    if (collisionDiamond) {
+      cout << "You got the diamond" << endl;
+      diamond.Pos = V2(-100, -100);
+      diamond.exist = false;
+      G.Heros.score += SCORE_DIAMOND;
+    }
+  }
+
   // ? héros/momie
   for (_Momie &momie : G.momies) {
     bool collisionMomie = InterRectRect(rectHero, momie.getRect());
     if (collisionMomie) {
       cout << "You lose !" << endl;
-      setMomies();
+      G.setMomies();
       G.Heros.nbVies--;
       G.Heros.Pos = V2(45, 45);
     }
   }
   // ? héros/mur
-
   if (getTapeUnMur(G.Heros.Pos, G.Heros.Size)) {
     if (G2D::IsKeyPressed(Key::LEFT))
       heros.Pos.x++;
@@ -647,7 +688,11 @@ int InitPartie() {
   G.Chest.isOpened = false;
 
   if (G2D::IsKeyPressed(Key::ENTER)) {
-    setMomies();
+    G.setMomies();
+    for (_Diamond &diamond : G.diamonds) {
+      diamond.IdTex = G2D::InitTextureFromString(diamond.Size, diamond.texture);
+      diamond.Size = diamond.Size * 2; // on peut zoomer la taille du sprite
+    }
     return 3;
   }
   return 2;
@@ -677,14 +722,14 @@ int gestion_ecran_jeu() {
   }
   // ? tirer une balle
   if (G2D::IsKeyPressed(Key::B)) {
-    if (G.Heros.hasGun && G.Heros.nbBalles > 0 && !G.Bullet.exist) {
+    if (G.Heros.hasGun && G.Heros.nbBullets > 0 && !G.Bullet.exist) {
       G.Bullet.setExist(true);
       G.Bullet.Pos = G.Heros.Pos;
       G.Bullet.setLastDirectionTexture(G.Heros);
       G.Bullet.IdTex =
           G2D::InitTextureFromString(G.Bullet.Size, G.Bullet.texture);
       G.Bullet.Size = G.Bullet.Size * 0.8; // on peut zoomer la taille du sprite
-      G.Heros.nbBalles--;
+      G.Heros.nbBullets--;
     }
   }
   if (G.Bullet.getExist()) {
@@ -754,7 +799,6 @@ void AssetsInit() {
   G.Gun.IdTex = G2D::InitTextureFromString(G.Gun.Size, G.Gun.texture);
   G.Gun.Size = G.Gun.Size * 0.8; // on peut zoomer la taille du sprite
 }
-
 int main(int argc, char *argv[]) {
   G2D::InitWindow(argc, argv, V2(G.Lpix * 15, G.Lpix * 15), V2(200, 200),
                   string("Labyrinthe"));
