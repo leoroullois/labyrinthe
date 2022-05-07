@@ -70,10 +70,14 @@ struct _Heros {
   bool typeTexture = false;
   int numTexture = 10;
 
-  // ? true si le héros possède une clé
   bool hasKey = false;
   bool hasGun = false;
   int nbBalles = 0;
+
+  int LastDirection = 0;
+  int getLastDirection() { return LastDirection; }
+  void setLastDirection(int _LastDirection) { LastDirection = _LastDirection; }
+
   bool getHasKey() { return hasKey; }
   void setHasKey(bool pKey) { hasKey = pKey; }
   int nbVies = 3;
@@ -202,6 +206,93 @@ struct _Gun {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
   }
 };
+
+struct _Bullet {
+  string textureNorth = "[  GG  ]"
+                        "[ GYYG ]"
+                        "[ GYYG ]"
+                        "[ GYYG ]"
+                        "[ GYYG ]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[ GYYG ]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[GGGGGG]";
+  string textureSouth = "[GGGGGG]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[ GYYG ]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[GYYYYG]"
+                        "[ GYYG ]"
+                        "[ GYYG ]"
+                        "[ GYYG ]"
+                        "[ GYYG ]"
+                        "[  GG  ]";
+
+  string textureEast = "[GG GGGGGGG     ]"
+                       "[GYGYYYYYYYGGGG ]"
+                       "[GYYYYYYYYYYYYYG]"
+                       "[GYYYYYYYYYYYYYG]"
+                       "[GYGYYYYYYYGGGG ]"
+                       "[GG GGGGGGG     ]";
+  string textureWeast = "[     GGGGGGG GG]"
+                        "[ GGGGYYYYYYYGYG]"
+                        "[GYYYYYYYYYYYYYG]"
+                        "[GYYYYYYYYYYYYYG]"
+                        "[ GGGGYYYYYYYGYG]"
+                        "[     GGGGGGG GG]";
+  V2 Size;
+  int IdTex;
+  V2 Pos;
+  string texture;
+
+  bool exist = false;
+  void setExist(bool _exist) { exist = _exist; }
+  bool getExist() { return exist; }
+
+  void setTexture(string _texture) { texture = _texture; }
+
+  V2 getDirectionBullet() {
+    if (texture == textureSouth)
+      return V2(0, -1);
+    if (texture == textureNorth)
+      return V2(0, 1);
+    if (texture == textureEast)
+      return V2(1, 0);
+    if (texture == textureWeast)
+      return V2(-1, 0);
+    return V2(0, 0);
+  }
+  void setLastDirectionTexture(_Heros &heros) {
+    if (heros.getLastDirection() == 0) {
+      setTexture(textureSouth);
+    } else if (heros.getLastDirection() == 1) {
+      setTexture(textureNorth);
+    } else if (heros.getLastDirection() == 2) {
+      setTexture(textureEast);
+    } else if (heros.getLastDirection() == 3) {
+      setTexture(textureWeast);
+    }
+  }
+
+  void killMomie(_Momie &momie) {
+    momie.Pos = V2(-100, -100);
+    cout << "Une momie a été touchée !" << endl;
+  }
+  Rectangle getRect() {
+    return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
+  }
+};
 struct GameData {
 
   string Map = "MMMMMMMMMMMMMMM"
@@ -229,6 +320,8 @@ struct GameData {
   _Key Key;
   _Chest Chest;
   _Gun Gun;
+  _Bullet Bullet;
+
   int difficulty = 0;
   int ecran = 0;
 
@@ -238,6 +331,31 @@ struct GameData {
 };
 
 GameData G;
+
+void setMomies() {
+  G.momies.clear();
+  if (G.difficulty >= 2) {
+    // ? difficile
+    G.momies.push_back(_Momie(529, 380));
+    G.momies.push_back(_Momie(485, 205));
+  }
+  if (G.difficulty >= 1) {
+    // ? moyen
+    G.momies.push_back(_Momie(43, 525));
+    G.momies.push_back(_Momie(316, 45));
+  }
+  if (G.difficulty >= 0) {
+    // ? facile
+    G.momies.push_back(_Momie(250, 250));
+    G.momies.push_back(_Momie(130, 420));
+    G.momies.push_back(_Momie(370, 470));
+  }
+  for (_Momie &momie : G.momies) {
+    momie.IdTex = G2D::InitTextureFromString(momie.Size, momie.texture);
+    momie.Size = momie.Size * 2; // on peut zoomer la taille du sprite
+  }
+}
+
 void affichage_ecran_accueil() {
   G2D::DrawStringFontMono(V2(50, 400), "Bienvenue dans le jeu du labyrinthe !",
                           20, 4, Color::White);
@@ -295,6 +413,9 @@ void affichage_ecran_jeu() {
   for (_Momie &momie : G.momies) {
     G2D::DrawRectWithTexture(momie.IdTex, momie.Pos, momie.Size);
   }
+  if (G.Bullet.getExist()) {
+    G2D::DrawRectWithTexture(G.Bullet.IdTex, G.Bullet.Pos, G.Bullet.Size);
+  }
   G2D::DrawStringFontMono(V2(100, 580), "Partie en cours", 20, 3, Color::Green);
 
   string vies = "Nombre de vies : " + std::to_string(G.Heros.nbVies);
@@ -342,7 +463,25 @@ bool getTapeUnMur(V2 newPos, V2 Size) {
          (G.Mur((newPos.x) / 40, (newPos.y + Size.y) / 40)) ||
          (G.Mur((newPos.x + Size.x) / 40, (newPos.y) / 40));
 }
-
+/**
+ * Collision bullet/momie-mur
+ */
+void collision(_Bullet &bullet) {
+  Rectangle rectBullet = bullet.getRect();
+  for (_Momie &momie : G.momies) {
+    if (InterRectRect(rectBullet, momie.getRect())) {
+      G.Bullet.setExist(false);
+      G.Bullet.killMomie(momie);
+      return;
+    }
+  }
+  V2 newPos = G.Bullet.Pos + G.Bullet.getDirectionBullet();
+  if (!getTapeUnMur(newPos, G.Bullet.Size)) {
+    G.Bullet.Pos = newPos;
+  } else {
+    G.Bullet.setExist(false);
+  }
+}
 /**
  * Collision héros/autre
  */
@@ -381,6 +520,7 @@ void collision(_Heros &heros) {
     bool collisionMomie = InterRectRect(rectHero, momie.getRect());
     if (collisionMomie) {
       cout << "You lose !" << endl;
+      setMomies();
       G.Heros.nbVies--;
       G.Heros.Pos = V2(45, 45);
     }
@@ -472,6 +612,7 @@ int gestion_ecran_options() {
   }
   return 1;
 }
+
 int InitPartie() {
   G.Heros.hasKey = false;
   G.Heros.hasGun = false;
@@ -483,29 +624,8 @@ int InitPartie() {
   G.Key.Pos = V2(440, 450);
   G.Chest.isOpened = false;
 
-  // G.momies.clear();
   if (G2D::IsKeyPressed(Key::ENTER)) {
-    G.momies.clear();
-    if (G.difficulty >= 2) {
-      // ? difficile
-      G.momies.push_back(_Momie(529, 380));
-      G.momies.push_back(_Momie(485, 205));
-    }
-    if (G.difficulty >= 1) {
-      // ? moyen
-      G.momies.push_back(_Momie(43, 525));
-      G.momies.push_back(_Momie(316, 45));
-    }
-    if (G.difficulty >= 0) {
-      // ? facile
-      G.momies.push_back(_Momie(250, 250));
-      G.momies.push_back(_Momie(130, 420));
-      G.momies.push_back(_Momie(370, 470));
-    }
-    for (_Momie &momie : G.momies) {
-      momie.IdTex = G2D::InitTextureFromString(momie.Size, momie.texture);
-      momie.Size = momie.Size * 2; // on peut zoomer la taille du sprite
-    }
+    setMomies();
     return 3;
   }
   return 2;
@@ -515,19 +635,37 @@ int gestion_ecran_jeu() {
   if (G2D::IsKeyPressed(Key::LEFT)) {
     G.Heros.Pos.x--;
     G.Heros.changeTexture();
+    G.Heros.setLastDirection(3);
   }
 
   if (G2D::IsKeyPressed(Key::RIGHT)) {
     G.Heros.Pos.x++;
     G.Heros.changeTexture();
+    G.Heros.setLastDirection(2);
   }
   if (G2D::IsKeyPressed(Key::UP)) {
     G.Heros.Pos.y++;
     G.Heros.changeTexture();
+    G.Heros.setLastDirection(1);
   }
   if (G2D::IsKeyPressed(Key::DOWN)) {
     G.Heros.Pos.y--;
     G.Heros.changeTexture();
+    G.Heros.setLastDirection(0);
+  }
+  // ? tirer une balle
+  if (G2D::IsKeyPressed(Key::B)) {
+    if (G.Heros.hasGun && !G.Bullet.exist) {
+      G.Bullet.setExist(true);
+      G.Bullet.Pos = G.Heros.Pos;
+      G.Bullet.setLastDirectionTexture(G.Heros);
+      G.Bullet.IdTex =
+          G2D::InitTextureFromString(G.Bullet.Size, G.Bullet.texture);
+      G.Bullet.Size = G.Bullet.Size * 0.8; // on peut zoomer la taille du sprite
+    }
+  }
+  if (G.Bullet.getExist()) {
+    collision(G.Bullet);
   }
 
   // ? Collisions
