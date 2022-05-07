@@ -192,14 +192,19 @@ struct _Chest {
   }
 };
 struct _Diamond {
-  string texture = "[   BBBBBBBBBBBBBB   ]"
-                   "[ BBBBBBBBBBBBBBBBBB ]"
-                   "[BBBBBBBBBBBBBBBBBBBB]"
-                   "[BBBBBBBBBBBBBBBBBBBB]"
-                   "[ BBBBBBBBBBBBBBBBBB ]"
-                   "[  BBBBBBBBBBBBBBBB  ]"
-                   "[   BBBBBBBBBBBBBB   ]"
-                   "[         B          ]";
+  string texture = "[    GGGG    ]"
+                   "[   GWWWWG   ]"
+                   "[  GWCCCWCG  ]"
+                   "[ GWWCCWCCCG ]"
+                   "[ GWCWWWWCCG ]"
+                   "[GWCWCCCCWCWG]"
+                   "[GWCWCCCCWCCG]"
+                   "[GWWWCCCCWCCG]"
+                   "[GWCCWWWWCCCG]"
+                   "[ GCCCCCCCCG ]"
+                   "[ GWCCCCCCCG ]"
+                   "[  GCCCCCCG  ]"
+                   "[   GGGGGG   ]";
 
   V2 Size;
   int IdTex;
@@ -359,8 +364,9 @@ struct GameData {
   int ecran = 0;
 
   vector<_Momie> momies = {};
-  _Diamond diamonds[3] = {_Diamond(V2(270, 250)), _Diamond(V2(180, 420)),
-                          _Diamond(V2(460, 470))};
+  _Diamond diamonds[5] = {_Diamond(V2(530, 367)), _Diamond(V2(48, 535)),
+                          _Diamond(V2(253, 290)), _Diamond(V2(492, 212)),
+                          _Diamond(V2(334, 52))};
   void setMomies() {
     momies.clear();
     if (difficulty >= 2) {
@@ -420,9 +426,8 @@ void affichage_init_partie() {
 
 void affichage_ecran_jeu() {
   // affichage des diamants
-  for (int i = 0; i < 3; i++) {
-    G2D::DrawRectWithTexture(G.diamonds[i].IdTex, G.diamonds[i].Pos,
-                             G.diamonds[i].Size);
+  for (_Diamond &diamond : G.diamonds) {
+    G2D::DrawRectWithTexture(diamond.IdTex, diamond.Pos, diamond.Size);
   }
 
   for (int x = 0; x < 15; x++)
@@ -573,8 +578,7 @@ void collision(_Heros &heros) {
   }
 
   // ? héros/diamond
-  for (int i = 0; i < 3; i++) {
-    _Diamond &diamond = G.diamonds[i];
+  for (_Diamond &diamond : G.diamonds) {
     bool collisionDiamond = InterRectRect(rectHero, diamond.getRect());
     if (collisionDiamond) {
       cout << "You got the diamond" << endl;
