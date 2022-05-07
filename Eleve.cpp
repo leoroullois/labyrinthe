@@ -16,6 +16,9 @@ using namespace std;
 #define ECRAN_GAME_OVER 4
 #define ECRAN_WIN 5
 
+#define SCORE_MOMIE 10
+#define SCORE_DIAMOND 5
+
 struct Rectangle {
   int xMin, xMax, yMin, yMax;
   Rectangle(int _xMin, int _yMin, int _xMax, int _yMax) {
@@ -72,7 +75,9 @@ struct _Heros {
 
   bool hasKey = false;
   bool hasGun = false;
-  int nbBalles = 0;
+
+  int score = 0;
+  int nbBalles = 10;
 
   int LastDirection = 0;
   int getLastDirection() { return LastDirection; }
@@ -103,7 +108,15 @@ struct _Heros {
       Size = Size * 2; // on peut zoomer la taille du sprite
     }
   }
-
+  void reset() {
+    hasKey = false;
+    hasGun = false;
+    hasGun = false;
+    nbBalles = 10;
+    score = 0;
+    nbVies = 3;
+    Pos = V2(45, 45);
+  }
   Rectangle getRect() {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
   }
@@ -285,8 +298,9 @@ struct _Bullet {
     }
   }
 
-  void killMomie(_Momie &momie) {
+  void killMomie(_Heros &heros, _Momie &momie) {
     momie.Pos = V2(-100, -100);
+    heros.score += SCORE_MOMIE;
     cout << "Une momie a été touchée !" << endl;
   }
   Rectangle getRect() {
@@ -416,23 +430,36 @@ void affichage_ecran_jeu() {
   if (G.Bullet.getExist()) {
     G2D::DrawRectWithTexture(G.Bullet.IdTex, G.Bullet.Pos, G.Bullet.Size);
   }
-  G2D::DrawStringFontMono(V2(100, 580), "Partie en cours", 20, 3, Color::Green);
+
+  G2D::DrawStringFontMono(V2(30, 580), "Partie en cours", 20, 3, Color::Green);
 
   string vies = "Nombre de vies : " + std::to_string(G.Heros.nbVies);
-  G2D::DrawStringFontMono(V2(100, 20), vies, 20, 3, Color::Green);
+  G2D::DrawStringFontMono(V2(30, 20), vies, 20, 3, Color::Red);
+
+  string score = "Score actuel : " + std::to_string(G.Heros.score);
+  G2D::DrawStringFontMono(V2(300, 580), score, 20, 3, Color::Yellow);
+
+  string balles = "Nombre de balles : " + std::to_string(G.Heros.nbBalles);
+  G2D::DrawStringFontMono(V2(300, 20), balles, 20, 3, Color::Cyan);
 }
 
 void affichage_ecran_game_over() {
   G2D::DrawStringFontMono(V2(70, 500), "Game over", 80, 10, Color::Red);
-  G2D::DrawStringFontMono(V2(50, 300),
+
+  string score = "Score : " + std::to_string(G.Heros.score);
+  G2D::DrawStringFontMono(V2(70, 300), score, 20, 3, Color::Yellow);
+
+  G2D::DrawStringFontMono(V2(50, 200),
                           "Appuyez sur ENTER pour faire une autre partie.", 16,
                           3, Color::Green);
 }
 void affichage_ecran_win() {
   G2D::DrawStringFontMono(V2(70, 500), "You WIN !!!!", 80, 10, Color::Green);
-  G2D::DrawStringFontMono(V2(50, 300),
+  G2D::DrawStringFontMono(V2(50, 200),
                           "Appuyez sur ENTER pour faire une autre partie.", 16,
                           3, Color::White);
+  string score = "Score : " + std::to_string(G.Heros.score);
+  G2D::DrawStringFontMono(V2(70, 300), score, 20, 3, Color::Yellow);
 }
 void render() {
   G2D::ClearScreen(Color::Black);
@@ -471,7 +498,7 @@ void collision(_Bullet &bullet) {
   for (_Momie &momie : G.momies) {
     if (InterRectRect(rectBullet, momie.getRect())) {
       G.Bullet.setExist(false);
-      G.Bullet.killMomie(momie);
+      G.Bullet.killMomie(G.Heros, momie);
       return;
     }
   }
@@ -614,12 +641,7 @@ int gestion_ecran_options() {
 }
 
 int InitPartie() {
-  G.Heros.hasKey = false;
-  G.Heros.hasGun = false;
-  G.Heros.hasGun = false;
-  G.Heros.nbBalles = 0;
-  G.Heros.nbVies = 3;
-  G.Heros.Pos = V2(45, 45);
+  G.Heros.reset();
 
   G.Key.Pos = V2(440, 450);
   G.Chest.isOpened = false;
@@ -655,13 +677,14 @@ int gestion_ecran_jeu() {
   }
   // ? tirer une balle
   if (G2D::IsKeyPressed(Key::B)) {
-    if (G.Heros.hasGun && !G.Bullet.exist) {
+    if (G.Heros.hasGun && G.Heros.nbBalles > 0 && !G.Bullet.exist) {
       G.Bullet.setExist(true);
       G.Bullet.Pos = G.Heros.Pos;
       G.Bullet.setLastDirectionTexture(G.Heros);
       G.Bullet.IdTex =
           G2D::InitTextureFromString(G.Bullet.Size, G.Bullet.texture);
       G.Bullet.Size = G.Bullet.Size * 0.8; // on peut zoomer la taille du sprite
+      G.Heros.nbBalles--;
     }
   }
   if (G.Bullet.getExist()) {
