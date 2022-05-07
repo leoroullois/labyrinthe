@@ -18,6 +18,9 @@ using namespace std;
 #define SCORE_MOMIE 10
 #define SCORE_DIAMOND 5
 
+#define COMPTEUR_TRAP 50
+#define MIN_TRAP 70
+
 struct Rectangle {
   int xMin, xMax, yMin, yMax;
   Rectangle(int _xMin, int _yMin, int _xMax, int _yMax) {
@@ -331,6 +334,131 @@ struct _Bullet {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
   }
 };
+
+struct _Trap {
+  string activeTexture = "[      WG                 WG       ]"
+                         "[      SG                 SG       ]"
+                         "[      WSG                WSG      ]"
+                         "[     WWSG               WWSG      ]"
+                         "[     WSSGG              WWSGG     ]"
+                         "[    WWSSGG             WWWSGG     ]"
+                         "[    WSSGGGG            WSSGGGG    ]"
+                         "[   SWSSGGGGS          SWSSGGGGS   ]"
+                         "[ SWSSSGGGGGGS       SWSSSGGGGGGS  ]"
+                         "[SKSSGGGGGGGGGKS WG SKSSGGGGGGGGGKS]"
+                         "[SKGGGGGGGGGGGKS SG SKGGGGGGGGGGGKS]"
+                         "[ SGGGGGGGGGGGS  WSG SGGGGGGGGGGGS ]"
+                         "[  SGGGGGGGGGS  WWSG  SGGGGGGGGGS  ]"
+                         "[               WSSGG              ]"
+                         "[              WWSSGG              ]"
+                         "[              WSSGGGG             ]"
+                         "[             SWSSGGGGS            ]"
+                         "[           SWSSSGGGGGGS           ]"
+                         "[      WG  SKSSGGGGGGGGKS WG       ]"
+                         "[      SG  SKSSGGGGGGGGKS SG       ]"
+                         "[      WSG  SGGGGGGGGGGS  WSG      ]"
+                         "[     WWSG   SGGGGGGGGS  WWSG      ]"
+                         "[     WSSGG              WWSGG     ]"
+                         "[    WWSSGG             WWWSGG     ]"
+                         "[    WSSGGGG            WSSGGGG    ]"
+                         "[   SWSSGGGGS          SWSSGGGGS   ]"
+                         "[ SWSSSGGGGGGS       SWSSSGGGGGGS  ]"
+                         "[SKSSGGGGGGGGGKS    SKSSGGGGGGGGGKS]"
+                         "[SKGGGGGGGGGGGKS    SKGGGGGGGGGGGKS]"
+                         "[ SGGGGGGGGGGGS      SGGGGGGGGGGGS ]"
+                         "[  SGGGGGGGGGS        SGGGGGGGGGS  ]";
+
+  string willBeActiveTexture = "[                                  ]"
+                               "[                                  ]"
+                               "[                                  ]"
+                               "[                                  ]"
+                               "[                                  ]"
+                               "[                                  ]"
+                               "[                                  ]"
+                               "[   SKKKKKKKS          SKKKKKKKS   ]"
+                               "[ SKKKKKKKKKKS       SKKKKKKKKKKS  ]"
+                               "[SKKKKWWGGKKKKKS    SKKKKWWGGKKKKKS]"
+                               "[SKKKSSSGGGKKKKS    SKKKSSSGGGKKKKS]"
+                               "[ SKKKSSGGKKKKS      SKKKSSGGKKKKS ]"
+                               "[  SKKKKKKKKKS        SKKKKKKKKKS  ]"
+                               "[                                  ]"
+                               "[                                  ]"
+                               "[                                  ]"
+                               "[             SKKKKKKKS            ]"
+                               "[           SKKKKKKKKKKS           ]"
+                               "[          SKKKKWWGGKKKKKS         ]"
+                               "[          SKKKSSSGGGKKKKS         ]"
+                               "[           SKKKSSGGKKKKS          ]"
+                               "[            SKKKKKKKKKS           ]"
+                               "[                                  ]"
+                               "[                                  ]"
+                               "[                                  ]"
+                               "[   SKKKKKKKS          SKKKKKKKS   ]"
+                               "[ SKKKKKKKKKKS       SKKKKKKKKKKS  ]"
+                               "[SKKKKWWGGKKKKKS    SKKKKWWGGKKKKKS]"
+                               "[SKKKSSSGGGKKKKS    SKKKSSSGGGKKKKS]"
+                               "[ SKKKSSGGKKKKS      SKKKSSGGKKKKS ]"
+                               "[  SKKKKKKKKKS        SKKKKKKKKKS  ]";
+
+  string inactiveTexture = "[                                  ]"
+                           "[                                  ]"
+                           "[                                  ]"
+                           "[                                  ]"
+                           "[                                  ]"
+                           "[                                  ]"
+                           "[                                  ]"
+                           "[   SKKKKKKKS          SKKKKKKKS   ]"
+                           "[ SKKKKKKKKKKS       SKKKKKKKKKKS  ]"
+                           "[SKKKKKWKKKKKKKS    SKKKKKWKKKKKKKS]"
+                           "[SKKKKSSKKKKKKKS    SKKKKSSKKKKKKKS]"
+                           "[ SKKKKSKKKKKKS      SKKKKSKKKKKKS ]"
+                           "[  SKKKKKKKKKS        SKKKKKKKKKS  ]"
+                           "[                                  ]"
+                           "[                                  ]"
+                           "[                                  ]"
+                           "[             SKKKKKKKS            ]"
+                           "[           SKKKKKKKKKKS           ]"
+                           "[          SKKKKKWKKKKKKKS         ]"
+                           "[          SKKKKSSKKKKKKKS         ]"
+                           "[           SKKKKSKKKKKKS          ]"
+                           "[            SKKKKKKKKKS           ]"
+                           "[                                  ]"
+                           "[                                  ]"
+                           "[                                  ]"
+                           "[   SKKKKKKKS          SKKKKKKKS   ]"
+                           "[ SKKKKKKKKKKS       SKKKKKKKKKKS  ]"
+                           "[SKKKKKWKKKKKKKS    SKKKKKWKKKKKKKS]"
+                           "[SKKKKSSKKKKKKKS    SKKKKSSKKKKKKKS]"
+                           "[ SKKKKSKKKKKKS      SKKKKSKKKKKKS ]"
+                           "[  SKKKKKKKKKS        SKKKKKKKKKS  ]";
+  string texture = inactiveTexture;
+
+  V2 Size;
+  int IdTex;
+  V2 Pos;
+
+  int compteur = rand() % COMPTEUR_TRAP + MIN_TRAP;
+
+  int active = 0;
+
+  _Trap(int x, int y) { Pos = V2(x, y); }
+
+  void setActive(bool _active) { active = _active; }
+  int getActive() { return active; }
+
+  void setTexture(string _texture) { texture = _texture; }
+
+  void killHeros(_Heros &heros) {
+    cout << "Vous avez été touché par une piège !" << endl;
+    heros.nbVies--;
+    heros.Pos = V2(45, 45);
+    ;
+  }
+  Rectangle getRect() {
+    return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
+  }
+};
+
 struct GameData {
 
   string Map = "MMMMMMMMMMMMMMM"
@@ -367,6 +495,8 @@ struct GameData {
   _Diamond diamonds[5] = {_Diamond(V2(530, 367)), _Diamond(V2(48, 535)),
                           _Diamond(V2(253, 290)), _Diamond(V2(492, 212)),
                           _Diamond(V2(334, 52))};
+
+  vector<_Trap> traps = {};
   void setMomies() {
     momies.clear();
     if (difficulty >= 2) {
@@ -388,6 +518,27 @@ struct GameData {
     for (_Momie &momie : momies) {
       momie.IdTex = G2D::InitTextureFromString(momie.Size, momie.texture);
       momie.Size = momie.Size * 2; // on peut zoomer la taille du sprite
+    }
+  }
+
+  void setTrap() {
+    traps.clear();
+    if (difficulty >= 2) {
+      // ? difficile
+      traps.push_back(_Trap(363, 288));
+    }
+    if (difficulty >= 1) {
+      // ? moyen
+      traps.push_back(_Trap(202, 85));
+    }
+    if (difficulty >= 0) {
+      // ? facile
+      traps.push_back(_Trap(122, 405));
+      traps.push_back(_Trap(362, 485));
+    }
+    for (_Trap &trap : traps) {
+      trap.IdTex = G2D::InitTextureFromString(trap.Size, trap.texture);
+      trap.Size = trap.Size * 2; // on peut zoomer la taille du sprite
     }
   }
   GameData() {}
@@ -427,9 +578,15 @@ void affichage_init_partie() {
 void affichage_ecran_jeu() {
   // affichage des diamants
   for (_Diamond &diamond : G.diamonds) {
+
     G2D::DrawRectWithTexture(diamond.IdTex, diamond.Pos, diamond.Size);
   }
-
+  // affichage des traps
+  for (_Trap &trap : G.traps) {
+    trap.IdTex = G2D::InitTextureFromString(trap.Size, trap.texture);
+    trap.Size = trap.Size * 1; // on peut zoomer la taille du sprite
+    G2D::DrawRectWithTexture(trap.IdTex, trap.Pos, trap.Size);
+  }
   for (int x = 0; x < 15; x++)
     for (int y = 0; y < 15; y++) {
       int xx = x * G.Lpix;
@@ -577,6 +734,15 @@ void collision(_Heros &heros) {
     }
   }
 
+  // ? héros / trap
+  for (_Trap &trap : G.traps) {
+    if (trap.active == 2) {
+      bool collisionTrap = InterRectRect(rectHero, trap.getRect());
+      if (collisionTrap) {
+        trap.killHeros(G.Heros);
+      }
+    }
+  }
   // ? héros/diamond
   for (_Diamond &diamond : G.diamonds) {
     bool collisionDiamond = InterRectRect(rectHero, diamond.getRect());
@@ -690,12 +856,17 @@ int InitPartie() {
 
   G.Key.Pos = V2(440, 450);
   G.Chest.isOpened = false;
-
+  G.Gun.Pos = V2(45, 200);
   if (G2D::IsKeyPressed(Key::ENTER)) {
     G.setMomies();
     for (_Diamond &diamond : G.diamonds) {
       diamond.IdTex = G2D::InitTextureFromString(diamond.Size, diamond.texture);
       diamond.Size = diamond.Size * 2; // on peut zoomer la taille du sprite
+    }
+    G.setTrap();
+    for (_Trap &trap : G.traps) {
+      trap.IdTex = G2D::InitTextureFromString(trap.Size, trap.texture);
+      trap.Size = trap.Size * 2; // on peut zoomer la taille du sprite
     }
     return 3;
   }
@@ -708,7 +879,6 @@ int gestion_ecran_jeu() {
     G.Heros.changeTexture();
     G.Heros.setLastDirection(3);
   }
-
   if (G2D::IsKeyPressed(Key::RIGHT)) {
     G.Heros.Pos.x++;
     G.Heros.changeTexture();
@@ -740,6 +910,26 @@ int gestion_ecran_jeu() {
     collision(G.Bullet);
   }
 
+  // ? traps
+  for (_Trap &trap : G.traps) {
+    // ? change la texture et le isActive si compteur == 0;
+    if (trap.compteur == 0) {
+      trap.compteur = rand() % COMPTEUR_TRAP + MIN_TRAP;
+      if (trap.active == 0) {
+        trap.compteur = MIN_TRAP;
+        trap.setTexture(trap.willBeActiveTexture);
+        trap.active = 1;
+      } else if (trap.active == 1) {
+        trap.setTexture(trap.activeTexture);
+        trap.active = 2;
+      } else {
+        trap.setTexture(trap.inactiveTexture);
+        trap.active = 0;
+      }
+    } else {
+      trap.compteur--;
+    }
+  }
   // ? Collisions
   collision(G.Heros);
   for (_Momie &momie : G.momies) {
