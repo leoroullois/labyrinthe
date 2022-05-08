@@ -21,6 +21,50 @@ using namespace std;
 #define COMPTEUR_TRAP 50
 #define MIN_TRAP 70
 
+struct _NiveauDonjon {
+  string Map;
+  string Map2 = "MMMMMMMMMMMMMMM"
+                "M M           M"
+                "M M M MMM MMM M"
+                "M   M       M M"
+                "MMM M M MMM M M"
+                "M   M M     M M"
+                "M MMM MMM MMMMM"
+                "M   M  M      M"
+                "M M M  M M MM M"
+                "M M M  M M M  M"
+                "M M M MM M MMMM"
+                "M M M    M    M"
+                "M M M MMMMMMM M"
+                "M M      M    M"
+                "MMMMMMMMMMMMMMM";
+  string Map1 = "MMMMMMMMMMMMMMM"
+                "M   M         M"
+                "M M M MMM MMM M"
+                "M M M M     M M"
+                "M M M M     MMM"
+                "M     M     M M"
+                "M MMM MMM MMM M"
+                "M   M  M      M"
+                "M M M  M M MM M"
+                "M M M  M M MM M"
+                "M MMM MM M MMMM"
+                "M   M M      MM"
+                "M M M M MMM  MM"
+                "M M     MMM  MMM"
+                "MMMMMMMMMMMMMMM";
+
+  int niveau;
+  void setNiveau(int _niveau) { niveau = _niveau; }
+  int getNiveau() { return niveau; }
+  void setTexture() {
+    if (niveau == 1) {
+      Map = Map1;
+    } else if (niveau == 2) {
+      Map = Map2;
+    }
+  }
+};
 struct Rectangle {
   int xMin, xMax, yMin, yMax;
   Rectangle(int _xMin, int _yMin, int _xMax, int _yMax) {
@@ -136,16 +180,53 @@ struct _Heros {
   void reset() {
     hasKey = false;
     hasGun = false;
-    nbBullets = 10;
-    score = 0;
-    nbVies = 3;
+
     Pos = V2(45, 45);
   }
   Rectangle getRect() {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
   }
 };
+struct _Life {
+  string vivantTexture = "[   KKK    KKK   ]"
+                         "[  KRRRK  KRRRK  ]"
+                         "[ KRMRMRKKRRRRRK ]"
+                         "[KRMWRRRRRRRRRRRK]"
+                         "[KRWRRRRRRRRRRRRK]"
+                         "[KRMRRRRRRRRRRRRK]"
+                         "[KRRRRRRRRRRRRRRK]"
+                         "[ KRRRRRRRRRRRRK ]"
+                         "[ KRRRRRRRRRRRRK ]"
+                         "[  KRRRRRRRRRRK  ]"
+                         "[   KRRRRRRRRK   ]"
+                         "[    KRRRRRRK    ]"
+                         "[     KRRRRK     ]"
+                         "[      KRRK      ]"
+                         "[       KK       ]";
 
+  string mortTexture = "[   KKK    KKK   ]"
+                       "[  KKKKK  KKKKK  ]"
+                       "[ KKKKKKKKKKKKKK ]"
+                       "[KKKWKKKKKKKKKKKK]"
+                       "[KKWKKKKKKKKKKKKK]"
+                       "[KKKKKKKKKKKKKKKK]"
+                       "[KKKKKKKKKKKKKKKK]"
+                       "[ KKKKKKKKKKKKKK ]"
+                       "[ KKKKKKKKKKKKKK ]"
+                       "[  KKKKKKKKKKKK  ]"
+                       "[   KKKKKKKKKK   ]"
+                       "[    KKKKKKKK    ]"
+                       "[     KKKKKK     ]"
+                       "[      KKKK      ]"
+                       "[       KK       ]";
+  V2 Size;
+  V2 Pos;
+  int IdTex;
+  bool exist;
+  string texture;
+  _Life(V2 _Pos) { Pos = _Pos; }
+  void setTexture(string _Texture) { texture = _Texture; }
+};
 struct _Momie {
   string texture = "[    O    ]"
                    "[  BBOBB  ]"
@@ -194,25 +275,31 @@ struct _Key {
 
   V2 Size;
   int IdTex;
-  V2 Pos = V2(440, 450);
+  V2 Pos = V2(460, 50);
+
+  void setPos(int x, int y) { Pos = V2(x, y); }
   Rectangle getRect() {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
   }
 };
 
 struct _Chest {
-  string texture = "[    WWWWWWWWWWWW    ]"
-                   "[  WGWWWWWWWWWWWWWW  ]"
-                   "[ WGKGGWWWWWWWWWWKWW ]"
-                   "[WGKCKGWWKKKKWWWKCKWW]"
-                   "[WGRRGGWKKYYKKWWWRRWW]"
-                   "[WWRWWWWWKKKKWWWWRRWW]"
-                   "[ WWWRWWWWWWWWWWWWWW ]"
-                   "[  WWWWWWWWWWWWWWWW  ]";
+  string texture = "[     KKKKKKKKKKKK     ]"
+                   "[    KWWWWWWWWWWWWK    ]"
+                   "[  KWGWWWWWWWWWWWWWWK  ]"
+                   "[ KWGKGGWWWWWWWWWWKWWK ]"
+                   "[KWGKKKGWWKKKKWWWKKKWWK]"
+                   "[KWGRRGGWKKYYKKWWWRRWWK]"
+                   "[KWWRWWWWWKKKKWWWWWRWWK]"
+                   "[ KWWWRWWWWWWWWWWWWWWK ]"
+                   "[  KWWWWWWWWWWWWWWWWK  ]"
+                   "[   KKKKKKKKKKKKKKKK   ]";
 
   V2 Size;
   int IdTex;
-  V2 Pos = V2(405, 50);
+  V2 Pos = V2(70, 530);
+
+  void setPos(int x, int y) { Pos = V2(x, y); }
 
   bool isOpened = false;
   Rectangle getRect() {
@@ -220,19 +307,19 @@ struct _Chest {
   }
 };
 struct _Diamond {
-  string texture = "[    GGGG    ]"
-                   "[   GWWWWG   ]"
-                   "[  GWCCCWCG  ]"
-                   "[ GWWCCWCCCG ]"
-                   "[ GWCWWWWCCG ]"
-                   "[GWCWCCCCWCWG]"
-                   "[GWCWCCCCWCCG]"
-                   "[GWWWCCCCWCCG]"
-                   "[GWCCWWWWCCCG]"
-                   "[ GCCCCCCCCG ]"
-                   "[ GWCCCCCCCG ]"
-                   "[  GCCCCCCG  ]"
-                   "[   GGGGGG   ]";
+  string texture = "[    KKKK    ]"
+                   "[   KWWWWK   ]"
+                   "[  KWCCCWCK  ]"
+                   "[ KWWCCWCCCK ]"
+                   "[ KWCWWWWCCK ]"
+                   "[KWCWCCCCWCWK]"
+                   "[KWCWCCCCWCCK]"
+                   "[KWWWCCCCWCCK]"
+                   "[KWCCWWWWCCCK]"
+                   "[ KCCCCCCCCK ]"
+                   "[ KWCCCCCCCK ]"
+                   "[  KCCCCCCK  ]"
+                   "[   KKKKKK   ]";
 
   V2 Size;
   int IdTex;
@@ -388,51 +475,73 @@ struct _Gun {
     return Rectangle(Pos.x, Pos.y, Pos.x + Size.x, Pos.y + Size.y);
   }
 };
+struct _Chargeur {
+  string texture = "[  KK  ]"
+                   "[ KYYK ]"
+                   "[ KYYK ]"
+                   "[ KYYK ]"
+                   "[ KYYK ]"
+                   "[KYYYYK]"
+                   "[KYYYYK]"
+                   "[KYYYYK]"
+                   "[KYYYYK]"
+                   "[KYYYYK]"
+                   "[KYYYYK]"
+                   "[ KYYK ]"
+                   "[KYYYYK]"
+                   "[KYYYYK]"
+                   "[KKKKKK]";
+  V2 Size;
+  V2 Pos;
+  int IdTex;
+  bool exist;
+  _Chargeur(V2 _Pos) { Pos = _Pos; }
+};
 
 struct _Bullet {
-  string textureNorth = "[  GG  ]"
-                        "[ GYYG ]"
-                        "[ GYYG ]"
-                        "[ GYYG ]"
-                        "[ GYYG ]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[ GYYG ]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[GGGGGG]";
-  string textureSouth = "[GGGGGG]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[ GYYG ]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[GYYYYG]"
-                        "[ GYYG ]"
-                        "[ GYYG ]"
-                        "[ GYYG ]"
-                        "[ GYYG ]"
-                        "[  GG  ]";
+  string textureNorth = "[  KK  ]"
+                        "[ KYYK ]"
+                        "[ KYYK ]"
+                        "[ KYYK ]"
+                        "[ KYYK ]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[ KYYK ]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[KKKKKK]";
+  string textureSouth = "[KKKKKK]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[ KYYK ]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[KYYYYK]"
+                        "[ KYYK ]"
+                        "[ KYYK ]"
+                        "[ KYYK ]"
+                        "[ KYYK ]"
+                        "[  KK  ]";
 
-  string textureEast = "[GG GGGGGGG     ]"
-                       "[GYGYYYYYYYGGGG ]"
-                       "[GYYYYYYYYYYYYYG]"
-                       "[GYYYYYYYYYYYYYG]"
-                       "[GYGYYYYYYYGGGG ]"
-                       "[GG GGGGGGG     ]";
-  string textureWeast = "[     GGGGGGG GG]"
-                        "[ GGGGYYYYYYYGYG]"
-                        "[GYYYYYYYYYYYYYG]"
-                        "[GYYYYYYYYYYYYYG]"
-                        "[ GGGGYYYYYYYGYG]"
-                        "[     GGGGGGG GG]";
+  string textureEast = "[KK KKKKKKK     ]"
+                       "[KYKYYYYYYYKKKK ]"
+                       "[KYYYYYYYYYYYYYK]"
+                       "[KYYYYYYYYYYYYYK]"
+                       "[KYKYYYYYYYKKKK ]"
+                       "[KK KKKKKKK     ]";
+  string textureWeast = "[     KKKKKKK KK]"
+                        "[ KKKKYYYYYYYKYK]"
+                        "[KYYYYYYYYYYYYYK]"
+                        "[KYYYYYYYYYYYYYK]"
+                        "[ KKKKYYYYYYYKYK]"
+                        "[     KKKKKKK KK]";
   V2 Size;
   int IdTex;
   V2 Pos;
@@ -446,13 +555,13 @@ struct _Bullet {
 
   V2 getDirectionBullet() {
     if (texture == textureSouth)
-      return V2(0, -1);
+      return V2(0, -2);
     if (texture == textureNorth)
-      return V2(0, 1);
+      return V2(0, 2);
     if (texture == textureEast)
-      return V2(1, 0);
+      return V2(2, 0);
     if (texture == textureWeast)
-      return V2(-1, 0);
+      return V2(-2, 0);
     return V2(0, 0);
   }
   void setLastDirectionTexture(_Heros &heros) {
@@ -476,25 +585,11 @@ struct _Bullet {
   }
 };
 struct GameData {
-
-  string Map = "MMMMMMMMMMMMMMM"
-               "M M           M"
-               "M M M MMM MMM M"
-               "M   M       M M"
-               "MMM M M MMM M M"
-               "M   M M     M M"
-               "M MMM MMM MMMMM"
-               "M   M  M      M"
-               "M M M  M M MM M"
-               "M M M  M M M  M"
-               "M M M MM M MMMM"
-               "M M M    M    M"
-               "M M M MMMMMMM M"
-               "M M      M    M"
-               "MMMMMMMMMMMMMMM";
-
   // indique la pr�sence d'un mur � la case (x,y)
-  bool Mur(int x, int y) { return Map[(15 - y - 1) * 15 + x] == 'M'; }
+  _NiveauDonjon NiveauDonjon;
+  bool Mur(int x, int y) {
+    return NiveauDonjon.Map[(15 - y - 1) * 15 + x] == 'M';
+  }
 
   int Lpix = 40; // largeur en pixels des cases du labyrinthe
 
@@ -504,26 +599,52 @@ struct GameData {
   _Gun Gun;
   _Bullet Bullet;
   _TexturePack TexturePack;
-
   int difficulty = 0;
   int ecran = 0;
 
   vector<_Momie> momies = {};
-  _Diamond diamonds[5] = {_Diamond(V2(530, 367)), _Diamond(V2(48, 535)),
-                          _Diamond(V2(253, 290)), _Diamond(V2(492, 212)),
-                          _Diamond(V2(334, 52))};
+  vector<_Diamond> diamonds = {};
+
+  void setDiamonds() {
+    diamonds.clear();
+    if (NiveauDonjon.getNiveau() == 1) {
+      // diamonds.push_back(_Diamond(V2(530, 367)));
+      // diamonds.push_back(_Diamond(V2(48, 535)));
+      // diamonds.push_back(_Diamond(V2(253, 290)));
+      // diamonds.push_back(_Diamond(V2(492, 212)));
+      // diamonds.push_back(_Diamond(V2(334, 52)));
+    } else if (NiveauDonjon.getNiveau() == 2) {
+      // diamonds.push_back(_Diamond(V2(530, 367)));
+      // diamonds.push_back(_Diamond(V2(48, 535)));
+      // diamonds.push_back(_Diamond(V2(253, 290)));
+      // diamonds.push_back(_Diamond(V2(492, 212)));
+      // diamonds.push_back(_Diamond(V2(334, 52)));
+    }
+    for (_Diamond &diamond : diamonds) {
+      diamond.IdTex = G2D::InitTextureFromString(diamond.Size, diamond.texture);
+      diamond.Size = diamond.Size * 1.5; // on peut zoomer la taille du sprite
+      diamond.exist = true;
+    }
+  }
+
+  _Life lifes[3] = {_Life(V2(255, 8)), _Life(V2(235, 8)), _Life(V2(215, 8))};
+  _Chargeur chargeurs[10] = {_Chargeur(V2(580, 20)), _Chargeur(V2(580, 5)),
+                             _Chargeur(V2(570, 20)), _Chargeur(V2(570, 5)),
+                             _Chargeur(V2(560, 20)), _Chargeur(V2(560, 5)),
+                             _Chargeur(V2(550, 20)), _Chargeur(V2(550, 5)),
+                             _Chargeur(V2(540, 20)), _Chargeur(V2(540, 5))};
   vector<_Trap> traps = {};
   void setMomies() {
     momies.clear();
     if (difficulty >= 2) {
       // ? difficile
-      momies.push_back(_Momie(529, 380));
-      momies.push_back(_Momie(485, 205));
+      momies.push_back(_Momie(529, 445));
+      momies.push_back(_Momie(529, 205));
     }
     if (difficulty >= 1) {
       // ? moyen
       momies.push_back(_Momie(43, 525));
-      momies.push_back(_Momie(316, 45));
+      momies.push_back(_Momie(280, 45));
     }
     if (difficulty >= 0) {
       // ? facile
@@ -541,16 +662,25 @@ struct GameData {
     traps.clear();
     if (difficulty >= 2) {
       // ? difficile
-      traps.push_back(_Trap(363, 288));
+      traps.push_back(_Trap(82, 285));
+      traps.push_back(_Trap(82 + 9 * 40, 285));
     }
     if (difficulty >= 1) {
       // ? moyen
-      traps.push_back(_Trap(202, 85));
+      traps.push_back(_Trap(122, 405));
+      traps.push_back(_Trap(42, 405));
     }
     if (difficulty >= 0) {
       // ? facile
-      traps.push_back(_Trap(122, 405));
+      // ? donjon
       traps.push_back(_Trap(362, 485));
+      traps.push_back(_Trap(322, 405));
+      traps.push_back(_Trap(362, 405));
+      traps.push_back(_Trap(402, 405));
+      traps.push_back(_Trap(362, 322));
+
+      traps.push_back(_Trap(402, 122));
+      traps.push_back(_Trap(202, 122));
     }
     for (_Trap &trap : traps) {
       trap.IdTex = G2D::InitTextureFromString(trap.Size, trap.texture);
@@ -589,7 +719,8 @@ void affichage_ecran_options() {
 
 void affichage_init_partie() {
   G2D::DrawStringFontMono(V2(220, 300), "Chargement...", 20, 3, Color::White);
-  G2D::DrawStringFontMono(V2(220, 100), "Appuyez sur ENTER", 16, 3, Color::Cyan);
+  G2D::DrawStringFontMono(V2(220, 100), "Appuyez sur ENTER", 16, 3,
+                          Color::Cyan);
   G2D::DrawCircle(V2(150, 250), 50, Color::Green);
   G2D::DrawCircle(V2(450, 450), 30, Color::Cyan);
   G2D::DrawCircle(V2(250, 550), 60, Color::Blue);
@@ -597,11 +728,6 @@ void affichage_init_partie() {
 }
 
 void affichage_ecran_jeu() {
-  // affichage des diamants
-  for (_Diamond &diamond : G.diamonds) {
-    G2D::DrawRectWithTexture(diamond.IdTex, diamond.Pos, diamond.Size);
-  }
-
   for (int x = 0; x < 15; x++)
     for (int y = 0; y < 15; y++) {
       int xx = x * G.Lpix - 6;
@@ -626,9 +752,18 @@ void affichage_ecran_jeu() {
   // affichage du Chest
   G2D::DrawRectWithTexture(G.Chest.IdTex, G.Chest.Pos, G.Chest.Size);
 
+  // affichage des diamants
   for (_Diamond &diamond : G.diamonds) {
     if (diamond.exist) {
       G2D::DrawRectWithTexture(diamond.IdTex, diamond.Pos, diamond.Size);
+    }
+  }
+  for (_Life &life : G.lifes) {
+    G2D::DrawRectWithTexture(life.IdTex, life.Pos, life.Size);
+  }
+  for (_Chargeur &chargeur : G.chargeurs) {
+    if (chargeur.exist) {
+      G2D::DrawRectWithTexture(chargeur.IdTex, chargeur.Pos, chargeur.Size);
     }
   }
   // affichage des traps
@@ -653,14 +788,14 @@ void affichage_ecran_jeu() {
     G2D::DrawRectWithTexture(G.Bullet.IdTex, G.Bullet.Pos, G.Bullet.Size);
   }
 
-  string vies = "Nombre de vies : " + std::to_string(G.Heros.nbVies);
-  G2D::DrawStringFontMono(V2(10, 10), vies, 20, 3, Color::Black);
+  string vies = "Nombre de vies : ";
+  G2D::DrawStringFontMono(V2(10, 12), vies, 18, 3, Color::Black);
 
-  string score = "Score actuel : " + std::to_string(G.Heros.score);
+  string score = "Score actuel :" + std::to_string(G.Heros.score);
   G2D::DrawStringFontMono(V2(150, 570), score, 25, 3, Color::Black);
 
-  string balles = "Nombre de balles : " + std::to_string(G.Heros.nbBullets);
-  G2D::DrawStringFontMono(V2(310, 10), balles, 20, 3, Color::Black);
+  string balles = "Nombre de balles :";
+  G2D::DrawStringFontMono(V2(300, 12), balles, 18, 3, Color::Black);
 }
 
 void affichage_ecran_game_over() {
@@ -767,6 +902,18 @@ void collision(_Heros &heros) {
         heros.Pos = V2(45, 45);
         G.setMomies();
         heros.nbBullets = 10;
+        for (_Life &life : G.lifes) {
+          if (life.exist) {
+            life.exist = false;
+            life.setTexture(life.mortTexture);
+            life.IdTex = G2D::InitTextureFromString(life.Size, life.texture);
+            life.Size = life.Size * 1.5; // on peut zoomer la taille du sprite
+            break;
+          }
+        }
+        for (_Chargeur &chargeur : G.chargeurs) {
+          chargeur.exist = true;
+        }
       }
     }
   }
@@ -790,6 +937,18 @@ void collision(_Heros &heros) {
         heros.nbVies--;
         heros.Pos = V2(45, 45);
         heros.nbBullets = 10;
+        for (_Life &life : G.lifes) {
+          if (life.exist) {
+            life.exist = false;
+            life.setTexture(life.mortTexture);
+            life.IdTex = G2D::InitTextureFromString(life.Size, life.texture);
+            life.Size = life.Size * 1.5; // on peut zoomer la taille du sprite
+            break;
+          }
+        }
+        for (_Chargeur &chargeur : G.chargeurs) {
+          chargeur.exist = true;
+        }
       }
     }
   }
@@ -825,6 +984,9 @@ bool InterMomieMomie(_Momie &momie) {
   }
   return conditionMomie;
 }
+/**
+ * Collision Momie/mur,momie
+ */
 void collision(_Momie &momie) {
   V2 Dir[4] = {V2(0, 1), V2(1, 0), V2(0, -1), V2(-1, 0)};
   V2 newPos = momie.Pos + momie.Dir;
@@ -884,12 +1046,29 @@ int gestion_ecran_options() {
 int InitPartie() {
   G.Heros.reset();
   G.Chest.isOpened = false;
+  if (G.NiveauDonjon.getNiveau() == 1) {
+    G.Heros.nbBullets = 10;
+    G.Heros.score = 0;
+    G.Heros.nbVies = 3;
+  }
   if (G2D::IsKeyPressed(Key::ENTER)) {
     G.setMomies();
-    for (_Diamond &diamond : G.diamonds) {
-      diamond.IdTex = G2D::InitTextureFromString(diamond.Size, diamond.texture);
-      diamond.Size = diamond.Size * 1.5; // on peut zoomer la taille du sprite
-      diamond.exist = true;
+    G.setDiamonds();
+    for (_Life &life : G.lifes) {
+      if (G.NiveauDonjon.getNiveau() == 1) {
+        life.IdTex = G2D::InitTextureFromString(life.Size, life.vivantTexture);
+        life.Size = life.Size * 1.5; // on peut zoomer la taille du sprite
+        life.exist = true;
+      }
+    }
+    for (_Chargeur &chargeur : G.chargeurs) {
+      if (G.NiveauDonjon.getNiveau() == 1) {
+        chargeur.IdTex =
+            G2D::InitTextureFromString(chargeur.Size, chargeur.texture);
+        chargeur.Size =
+            chargeur.Size * 0.8; // on peut zoomer la taille du sprite
+        chargeur.exist = true;
+      }
     }
     G.setTrap();
     for (_Trap &trap : G.traps) {
@@ -933,6 +1112,12 @@ int gestion_ecran_jeu() {
           G2D::InitTextureFromString(G.Bullet.Size, G.Bullet.texture);
       G.Bullet.Size = G.Bullet.Size * 0.8; // on peut zoomer la taille du sprite
       G.Heros.nbBullets--;
+      for (_Chargeur &chargeur : G.chargeurs) {
+        if (chargeur.exist) {
+          chargeur.exist = false;
+          break;
+        }
+      }
     }
   }
   if (G.Bullet.getExist()) {
@@ -965,7 +1150,13 @@ int gestion_ecran_jeu() {
   }
 
   if (G.Chest.isOpened) {
-    return 5;
+    if (G.NiveauDonjon.getNiveau() == 2) {
+      return 5;
+    } else if (G.NiveauDonjon.getNiveau() == 1) {
+      G.NiveauDonjon.setNiveau(2);
+      G.NiveauDonjon.setTexture();
+      return 2;
+    }
   }
   if (G.Heros.nbVies <= 0) {
     return 4;
@@ -1009,6 +1200,9 @@ void Logic() {
 
 void AssetsInit() {
   // Size passé en ref et texture en param
+  G.NiveauDonjon.setNiveau(1);
+  G.NiveauDonjon.setTexture();
+
   G.TexturePack.IdTexMur =
       G2D::InitTextureFromString(G.TexturePack.Size, G.TexturePack.textureMur);
   G.TexturePack.IdTexSol =
